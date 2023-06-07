@@ -3,6 +3,7 @@
     "start": "nodemon index.js"
   },
   "dependencies": {
+    "contentful-management": "^10.36.0",
     "express": "^4.18.1"
   },
   "devDependencies": {
