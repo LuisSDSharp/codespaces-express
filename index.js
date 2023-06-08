@@ -1,22 +1,47 @@
 const translationsRaw = require('./translations.json')
 const translations = Object.entries(translationsRaw)
+const contentfulManagement = require('contentful-management')
 const express = require('express')
 const app = express()
 const port = 3000
 
-const newLocalizedGroupId = '3aWEE6K7BoQwSQdtt8QbTr'//'11G4hpZ7Ovy7gl5uG41Su1'
-
-const contentfulManagement = require('contentful-management');
+const TOKEN = 'CFPAT-FbO5rpGVCvOigcJOiZsbBwi6rjHNrLtlb7FsvNnqNMY'
+const SPACE = 'e48r2iwyjczp'
+const ENVIRONMENT = 'master'
+const newLocalizedGroupId = '11G4hpZ7Ovy7gl5uG41Su1'
 const translationsEntries = []
 
-app.get('/create', async (_req, res) => {
+app.get('/verify', async (_req, res) => {
   try {
-    const client = contentfulManagement.createClient({
-      accessToken: 'CFPAT-FbO5rpGVCvOigcJOiZsbBwi6rjHNrLtlb7FsvNnqNMY',
+    const client = contentfulManagement.createClient({ accessToken: TOKEN })
+
+    const space = await client.getSpace(SPACE)
+    const env = await space.getEnvironment(ENVIRONMENT)
+
+    const localizedItems = await env.getEntries({ content_type: 'localizedItem', limit: 1000 })
+
+    let syncedUp = true
+    translations.forEach(t => {
+      if (!localizedItems.items.find(item => item.fields?.key['en-US'] === t[0])) {
+        console.log(`"${t[0]}": "${t[1]}",`)
+        syncedUp = false
+      }
     })
 
-    const space = await client.getSpace('e48r2iwyjczp')
-    const env = await space.getEnvironment('staging')
+    syncedUp && console.log('All synced Up!')
+  } catch(error) {
+    console.error('Error creating entry:', error)
+  }
+
+  res.send('Hello World!')
+})
+
+app.get('/update', async (_req, res) => {
+  try {
+    const client = contentfulManagement.createClient({ accessToken: TOKEN })
+
+    const space = await client.getSpace(SPACE)
+    const env = await space.getEnvironment(ENVIRONMENT)
 
     translations.forEach(async ([ key, value ]) => {
       const currentEntry = await env.getEntries({ content_type: 'localizedItem', 'fields.key': key })
@@ -37,7 +62,7 @@ app.get('/create', async (_req, res) => {
       }
     })
 
-    containerEntry.update()
+    //containerEntry.update()
   } catch(error) {
     console.error('Error creating entry:', error)
   }
@@ -47,12 +72,10 @@ app.get('/create', async (_req, res) => {
 
 app.get('/update', async (_req, res) => {
   try {
-    const client = contentfulManagement.createClient({
-      accessToken: 'CFPAT-FbO5rpGVCvOigcJOiZsbBwi6rjHNrLtlb7FsvNnqNMY',
-    })
+    const client = contentfulManagement.createClient({ accessToken: TOKEN })
 
-    const space = await client.getSpace('e48r2iwyjczp')
-    const env = await space.getEnvironment('staging')
+    const space = await client.getSpace(SPACE)
+    const env = await space.getEnvironment(ENVIRONMENT)
     const localization = 'en-US'
 
     // Get all existing localized items in contentful
